@@ -9,7 +9,7 @@
 %token SUM LESS MULT DIV
 %token LEFT RIGHT
 %token END
-%token LS PS QUIT CALC KILL
+%token LS PS QUIT KILL
 
 %left SUM LESS
 %left MULT DIV
@@ -24,14 +24,14 @@ Input:
 
 Line:
      END
-     | CALC Expr END { printf("Resultado: %f\n", $2); } 
+     | Expr END { printf("Resultado: %f\n", $1); } 
      | LS END { system("ls"); }
      | PS END { system("ps"); }
      | QUIT END { printf("Aguarde, O Shell será finalizado. \n"); exit(0); }
 ;
 
 Expr:
-     	NUM{ $$ = $1; }
+     NUM{ $$ = $1; }
 	| Expr SUM Expr { $$ = $1 + $3; } //Adição
 	| Expr LESS Expr { $$ = $1 - $3; } //Subtração
 	| Expr MULT Expr { $$ = $1 * $3; } //Multiplicação
