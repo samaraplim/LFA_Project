@@ -29,3 +29,6 @@ float {int}("."{int})?{exp}?
 "ps" return PS;
 "quit" return QUIT;
 "kill" return KILL;
+"mkdir" 	return MKDIR;
+
+%%
