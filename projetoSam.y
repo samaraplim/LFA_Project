@@ -1,4 +1,5 @@
 %{
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,16 +83,17 @@ yyerror("Comando solicitado inválido") ; return(0);}
 ;
 
 Exp:
-     	NUM { $$ = $1; }
-	| Exp SUM Exp { $$ = $1 + $3; } 
-	| Exp LESS Exp { $$ = $1 - $3; } 
-	| Exp MULT Exp { $$ = $1 * $3; } 
-	| Exp DIV Exp { if($3)$$ = $1 / $3; else {yyerror("não existe essa divisão"); return(0);}} 
-	| LESS Exp %prec NEG { $$ = - $2; } 
-	| LEFT Exp RIGHT { $$ = $2; } 
-	;
+NUM { $$ = $1; }
+| Exp SUM Exp { $$ = $1 + $3; } 
+| Exp LESS Exp { $$ = $1 - $3; } 
+| Exp MULT Exp { $$ = $1 * $3; } 
+| Exp DIV Exp { if($3)$$ = $1 / $3; else {yyerror("não existe essa divisão"); return(0);}} 
+| LESS Exp %prec NEG { $$ = - $2; } 
+| LEFT Exp RIGHT { $$ = $2; } 
+;
 
 %%
+
 void yyerror(const char *s) {
 fprintf(stderr, "Comando solicitado inválido. Erro: %s\n", s);}
 
