@@ -2,55 +2,102 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define YYSTYPE double
+#include <string.h>
+#include <unistd.h>
+
+extern int yylex();
+extern int yyparse();
+extern FILE* yyin;
+void yyerror(const char* s);
 %}
 
-%token NUM
-%token SUM LESS MULT DIV
+%union {
+int integer;
+float pfloat;
+char *sval;
+}
+
+%token <pfloat> NUM
 %token LEFT RIGHT
 %token END
-%token LS PS QUIT KILL
-
-%left SUM LESS
-%left MULT DIV
-%left NEG
-
+%token LS PS KILL MKDIR RMDIR CD TOUCH IFCONFIG START CALC QUIT ERROR
+%left SUM LESS MULT DIV NEG
+%token <sval> ARGUMENTO
+%type <pfloat> Exp
 %start Input
 %%
 
-Input:
-     | Input Line
+Input: {
+char shellName[1024] = "Samara:";
+char dir[1024];
+getcwd(dir, sizeof(dir));
+strcat(shellName,dir);
+strcat(shellName,">> ");
+printf("%s",shellName);
+}
+
+| Input Line {
+char shellName[1024] = "Samara:";
+char dir[1024];
+getcwd(dir, sizeof(dir));
+strcat(shellName,dir);
+strcat(shellName,">> ");
+printf("%s",shellName);
+}
 ;
 
-Line:
-     END
-     | Expr END { printf("Resultado: %f\n", $1); } 
-     | LS END { system("ls"); }
-     | PS END { system("ps"); }
-     | QUIT END { printf("Aguarde, O Shell será finalizado. \n"); exit(0); }
+Line: END
+| CALC Exp END { 
+printf("Resultado: %f\n", $2); }
+| LS END {
+system("ls");}
+| PS END {
+system("ps");}
+| KILL NUM END {
+char commandS[1024]; int n; n=(int)$2; snprintf(commandS, 1024, "kill %d", n); system(commandS);}
+| MKDIR ARGUMENTO END {
+char cmd[1024]; strcpy(cmd,"/bin/mkdir ");strcat(cmd, $2); system(cmd);}
+| RMDIR ARGUMENTO END {
+}
+| CD ARGUMENTO END {
+int response = 0;
+char dir_path[1024];
+getcwd(dir_path, sizeof(dir_path));
+strcat(dir_path, "/");
+strcat(dir_path, $2);
+response = chdir(dir_path);
+if(response != 0){
+printf("N�o encontrado diret�rio pedido\n");}
+}
+| TOUCH ARGUMENTO END {
+char cmd[1024]; strcpy(cmd,"/bin/touch ");strcat(cmd, $2); system(cmd);}
+| IFCONFIG END {
+system("ifconfig");}
+| START ARGUMENTO END {
+char start[1024]; strcpy(start, $2); strcat(start, "&"); system(start);}
+| QUIT END {
+printf("Encerrando o shell\n"); exit(0);}
+|ARGUMENTO END {
+yyerror("Comando solicitado inv�lido") ; return(0);}
 ;
 
-Expr:
-     NUM{ $$ = $1; }
-	| Expr SUM Expr { $$ = $1 + $3; } //Adição
-	| Expr LESS Expr { $$ = $1 - $3; } //Subtração
-	| Expr MULT Expr { $$ = $1 * $3; } //Multiplicação
-	| Expr DIV Expr { if($3)$$ = $1 / $3; else {yyerror("Erro pois não é possível dividir um número por zero"); return(0);}} //Divisão com tratamento de erro
-	| LESS Expr %prec NEG { $$ = - $2; } //Numeros negativos
-	| LEFT Expr RIGHT { $$ = $2; } //Parenteses
-;
-
+Exp:
+     	NUM { $$ = $1; }
+	| Exp SUM Exp { $$ = $1 + $3; } 
+	| Exp LESS Exp { $$ = $1 - $3; } 
+	| Exp MULT Exp { $$ = $1 * $3; } 
+	| Exp DIV Exp { if($3)$$ = $1 / $3; else {yyerror("n�o existe essa divis�o"); return(0);}} 
+	| LESS Exp %prec NEG { $$ = - $2; } 
+	| LEFT Exp RIGHT { $$ = $2; } 
+	;
 
 %%
-
- 
-int yyerror(char *s) {
-  printf("%s\n", s);
-}
+void yyerror(const char *s) {
+fprintf(stderr, "Comando solicitado inv�lido. Erro: %s\n", s);}
 
 int main() {
-  if (yyparse())
-     fprintf(stderr, "Compilado com sucesso!\n");
-  else
-     fprintf(stderr, "Erro encontrado, verifique.\n");
-}
+yyin = stdin;
+do {
+yyparse();
+} while(!feof(yyin));
+return 0;}
